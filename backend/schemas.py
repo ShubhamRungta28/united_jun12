@@ -1,5 +1,6 @@
 # schemas.py
 from pydantic import BaseModel, Field, validator
+from datetime import datetime
 
 
 class Token(BaseModel):
@@ -39,4 +40,33 @@ class UserResponse(BaseModel):
     email: str | None = None
 
 class UserInDB(UserResponse):
-    hashed_password: str 
+    hashed_password: str
+
+class UploadRecordBase(BaseModel):
+    filename: str
+    upload_status: str | None = "pending"
+    extract_status: str | None = "pending"
+    tracking_id: str | None = None
+    address: str | None = None
+    name: str | None = None
+    city: str | None = None
+    number: str | None = None
+    pincode: str | None = None
+    country: str | None = None
+    extracted_info: dict | None = None
+
+class UploadRecordCreate(UploadRecordBase):
+    pass
+
+class UploadRecordResponse(UploadRecordBase):
+    id: int
+    upload_timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+class PaginatedUploadRecords(BaseModel):
+    total: int
+    page: int
+    size: int
+    items: list[UploadRecordResponse] 

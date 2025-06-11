@@ -6,77 +6,51 @@ import UploadPage from './components/UploadPage';
 import DashboardPage from './components/DashboardPage';
 import AnalyticsPage from './components/AnalyticsPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import { CssBaseline, AppBar, Toolbar, Typography, Button, Box, Container, Stack, IconButton, Drawer, List, ListItem, ListItemButton, ListItemText } from '@mui/material';
+import { CssBaseline, AppBar, Toolbar, Typography, Button, Box, Container, Stack, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import AnalyticsIcon from '@mui/icons-material/Analytics';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import PersonIcon from '@mui/icons-material/Person';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import theme from './theme';
 import { useNavigate } from 'react-router-dom';
 import RegisterPage from './components/RegisterPage';
 import ConfirmationPage from './components/ConfirmationPage';
-import HomePage from './components/HomePage';
 import ProfilePage from './components/ProfilePage';
 
 function App() {
   const { isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null); // State for the menu anchor
+  const menuOpen = Boolean(anchorEl);
 
   // Define paths where the AppBar should not be shown
   const noAppBarPaths = ['/login', '/register', '/confirmation'];
   const shouldShowAppBar = !noAppBarPaths.includes(location.pathname);
 
   const navItems = [
-    { label: 'Upload', path: '/upload' },
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Analytics', path: '/analytics' },
+    { label: 'Upload', path: '/upload', icon: <CloudUploadIcon /> },
+    { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+    { label: 'Analytics', path: '/analytics', icon: <AnalyticsIcon /> },
   ];
 
-  const handleDrawerToggle = () => {
-    setDrawerOpen(!drawerOpen);
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
   };
 
-  const drawer = (
-    <Box
-      onClick={handleDrawerToggle}
-      sx={{ width: '20vw' }} // Occupies 20% of the viewport width
-    >
-      <List>
-        {navItems.map((item) => (
-          <ListItem key={item.label} disablePadding>
-            <ListItemButton onClick={() => navigate(item.path)}>
-              <ListItemText primary={item.label} />
-            </ListItemButton>
-          </ListItem>
-        ))}
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => navigate('/profile')}>
-            <ListItemText primary="Profile" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => {
-            // Placeholder for actual settings logic
-            alert('Settings page not implemented yet.');
-            navigate('/settings'); // You might want to create a settings page later
-          }}>
-            <ListItemText primary="Settings" />
-          </ListItemButton>
-        </ListItem>
-        {isAuthenticated && (
-          <ListItem disablePadding>
-            <ListItemButton onClick={() => {
-              logout();
-              navigate('/login');
-            }}>
-              <ListItemText primary="Logout" />
-            </ListItemButton>
-          </ListItem>
-        )}
-      </List>
-    </Box>
-  );
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleMenuItemClick = (path) => {
+    navigate(path);
+    handleMenuClose();
+  };
 
   return (
     <AuthProvider>
@@ -92,7 +66,7 @@ function App() {
                       color="inherit"
                       aria-label="open drawer"
                       edge="start"
-                      onClick={handleDrawerToggle}
+                      onClick={handleMenuClick} // Open menu on click
                       sx={{ mr: 2 }}
                     >
                       <MenuIcon />
@@ -105,13 +79,13 @@ function App() {
                     fontWeight: 'bold',
                     cursor: 'pointer'
                   }}
-                    onClick={() => navigate(isAuthenticated ? '/home' : '/login')} // Changed to /home after login
+                    onClick={() => navigate(isAuthenticated ? '/upload' : '/login')} // Changed to /upload after login
                 >
-                  Package Label
+                  PARS
                 </Typography>
                 {isAuthenticated && (
                   <Stack direction="row" spacing={2} sx={{ mr: 2 }}>
-                      {/* These items are now in the drawer */}
+                      {/* These items are now in the dropdown menu */}
                   </Stack>
                 )}
                 {isAuthenticated && (
@@ -127,13 +101,50 @@ function App() {
             </Container>
           </AppBar>
           )}
-          <Drawer
-            anchor="left"
-            open={drawerOpen}
-            onClose={handleDrawerToggle}
-          >
-            {drawer}
-          </Drawer>
+          {isAuthenticated && (
+            <Menu
+              anchorEl={anchorEl}
+              open={menuOpen}
+              onClose={handleMenuClose}
+              MenuListProps={{
+                'aria-labelledby': 'basic-button',
+              }}
+            >
+              {navItems.map((item) => (
+                <MenuItem key={item.label} onClick={() => handleMenuItemClick(item.path)}>
+                  <ListItemIcon>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText>{item.label}</ListItemText>
+                </MenuItem>
+              ))}
+              <MenuItem onClick={() => handleMenuItemClick('/profile')}>
+                <ListItemIcon>
+                  <PersonIcon />
+                </ListItemIcon>
+                <ListItemText>Profile</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => {
+                alert('Settings page not implemented yet.');
+                handleMenuClose();
+              }}>
+                <ListItemIcon>
+                  <SettingsIcon />
+                </ListItemIcon>
+                <ListItemText>Settings</ListItemText>
+              </MenuItem>
+              <MenuItem onClick={() => {
+                logout();
+                navigate('/login');
+                handleMenuClose();
+              }}>
+                <ListItemIcon>
+                  <ExitToAppIcon />
+                </ListItemIcon>
+                <ListItemText>Logout</ListItemText>
+              </MenuItem>
+            </Menu>
+          )}
           <Box 
             component="main" 
             sx={{ 
@@ -147,12 +158,11 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/confirmation" element={<ConfirmationPage />} />
-                <Route path="/home" element={<HomePage />} /> {/* New home page route */}
                 <Route path="/profile" element={
                   <ProtectedRoute>
                     <ProfilePage />
                   </ProtectedRoute>
-                } /> {/* New profile page route */}
+                } />
                 <Route path="/upload" element={
                   <ProtectedRoute>
                     <UploadPage />
@@ -168,7 +178,7 @@ function App() {
                     <AnalyticsPage />
                   </ProtectedRoute>
                 } />
-                <Route path="*" element={<Navigate to="/login" />} />
+                <Route path="*" element={<Navigate to={isAuthenticated ? "/upload" : "/login"} />} />
               </Routes>
             </Container>
           </Box>

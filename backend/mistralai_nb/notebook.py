@@ -51,12 +51,12 @@ def process_single_image(image_path):
         ocr_text = ocr_response.pages[0].markdown
         name, phone, address, tracking_number = extract_details(ocr_text)
 
-    return {
+        return {
             "Name": name,
             "Phone": phone,
             "Address": address,
             "Tracking Number": tracking_number
-    }
+        }
 
 # === Write extracted data to file ===
 def write_extracted_data_to_file(data, output_filename):
