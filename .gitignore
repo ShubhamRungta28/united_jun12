@@ -1,0 +1,34 @@
+# ────────────── PYTHON / FASTAPI (Backend) ──────────────
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.db
+*.log
+*.env
+.env/
+.env.*
+
+# Python virtual environments
+venv/
+env/
+venv.bak/
+
+# Pydantic cache
+.pdm.toml
+.mypy_cache/
+.pytest_cache/
+.dmypy.json
+
+# ────────────── NODE / REACT (Frontend) ──────────────
+node_modules/
+dist/
+build/
+.npm/
+.npmrc
+package-lock.json
+yarn.lock
+
+# ────────────── SYSTEM FILES ──────────────
+.DS_Store
+Thumbs.db
+*.swp
