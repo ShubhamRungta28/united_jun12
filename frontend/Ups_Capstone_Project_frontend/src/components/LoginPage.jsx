@@ -25,7 +25,7 @@ function LoginPage() {
         try {
             const data = await authService.login(username, password);
             login(data.access_token, { username }); // Assuming user data for context
-            navigate('/home'); // Redirect to the new home page after login
+            navigate('/upload'); // Redirect to the new home page after login
         } catch (err) {
             setError(err.message);
         }
