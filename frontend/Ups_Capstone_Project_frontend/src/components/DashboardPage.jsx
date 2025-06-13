@@ -15,16 +15,18 @@ import {
   Tabs,
   Tab,
   TextField,
-  Grid,
   InputAdornment,
   IconButton,
   CircularProgress,
   Alert,
-  Pagination
+  Pagination,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear';
-import { JsonToTable } from 'react-json-to-table';
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -35,14 +37,7 @@ const DashboardPage = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalRecords, setTotalRecords] = useState(0);
-  const [filters, setFilters] = useState({
-    name: '',
-    city: '',
-    number: '',
-    pincode: '',
-    country: '',
-    tracking_id: '',
-  });
+  const [searchTerm, setSearchTerm] = useState('');
 
   const navTabs = [
     { label: 'Upload', path: '/upload' },
@@ -50,7 +45,7 @@ const DashboardPage = () => {
     { label: 'Analytics', path: '/analytics' },
   ];
 
-  const [currentTab, setCurrentTab] = useState(navTabs[1].path); // Dashboard is the second tab
+  const [currentTab, setCurrentTab] = useState(navTabs[1].path);
 
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
@@ -65,12 +60,6 @@ const DashboardPage = () => {
         page: page,
         size: pageSize,
       });
-
-      for (const key in filters) {
-        if (filters[key]) {
-          queryParams.append(key, filters[key]);
-        }
-      }
 
       const response = await fetch(`http://localhost:8000/upload-records/?${queryParams.toString()}`);
       if (!response.ok) {
@@ -90,22 +79,24 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetchRecords();
-  }, [page, pageSize, filters]); // Re-fetch when page, size, or filters change
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
-    setPage(1); // Reset to first page on filter change
-  };
-
-  const handleClearFilter = (filterName) => {
-    setFilters(prevFilters => ({ ...prevFilters, [filterName]: '' }));
-    setPage(1); // Reset to first page on filter change
-  };
+  }, [page, pageSize]);
 
   const handlePageChange = (event, value) => {
     setPage(value);
   };
+
+  const highlightMatch = (text) => {
+    if (!searchTerm) return text;
+    const parts = text.split(new RegExp(`(${searchTerm})`, 'gi'));
+    return parts.map((part, i) =>
+      part.toLowerCase() === searchTerm.toLowerCase() ? <mark key={i}>{part}</mark> : part
+    );
+  };
+
+  const filteredRecords = records.filter(record => {
+    const combined = Object.values(record).join(' ').toLowerCase();
+    return combined.includes(searchTerm.toLowerCase());
+  });
 
   return (
     <Container maxWidth="lg">
@@ -113,16 +104,9 @@ const DashboardPage = () => {
         <Tabs 
           value={currentTab} 
           onChange={handleTabChange} 
-          aria-label="navigation tabs"
           variant="fullWidth"
           indicatorColor="primary"
           textColor="primary"
-          sx={{
-            '.MuiTabs-indicator': {
-              height: '4px',
-              borderRadius: '4px 4px 0 0',
-            },
-          }}
         >
           {navTabs.map((tab) => (
             <Tab 
@@ -135,38 +119,42 @@ const DashboardPage = () => {
         </Tabs>
       </Box>
 
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+        <FormControl size="small" sx={{ minWidth: 120 }}>
+          <InputLabel>Rows</InputLabel>
+          <Select
+            value={pageSize}
+            label="Rows"
+            onChange={(e) => setPageSize(e.target.value)}
+          >
+            {[5, 10, 20, 50].map((size) => (
+              <MenuItem key={size} value={size}>{size}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <TextField
+          label="Search All"
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton onClick={() => setSearchTerm('')}>
+                  <ClearIcon />
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
       <Paper elevation={3} sx={{ mt: 2, p: 4 }}>
         <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
           Extracted Records History
         </Typography>
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="h6" gutterBottom>Filters</Typography>
-          <Grid container spacing={2}>
-            {Object.keys(filters).map((key) => (
-              <Grid item xs={12} sm={6} md={4} key={key}>
-                <TextField
-                  fullWidth
-                  label={key.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
-                  name={key}
-                  value={filters[key]}
-                  onChange={handleFilterChange}
-                  variant="outlined"
-                  size="small"
-                  InputProps={{
-                    endAdornment: filters[key] && (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => handleClearFilter(key)} size="small">
-                          <ClearIcon />
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
 
         {loading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -181,50 +169,38 @@ const DashboardPage = () => {
           </Alert>
         )}
 
-        {!loading && !error && records.length === 0 && (
+        {!loading && !error && filteredRecords.length === 0 && (
           <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center', my: 4 }}>
-            No records found. Adjust your filters or upload a label.
+            No matching records found.
           </Typography>
         )}
 
-        {!loading && records.length > 0 && (
+        {!loading && filteredRecords.length > 0 && (
           <TableContainer component={Paper} elevation={1} sx={{ mb: 3 }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: 'primary.light', '& th': { color: 'common.white', fontWeight: 'bold' } }}>
                   <TableCell>Uploaded Time</TableCell>
                   <TableCell>Tracking ID</TableCell>
-                  <TableCell>Address</TableCell>
                   <TableCell>Name</TableCell>
                   <TableCell>City</TableCell>
                   <TableCell>Pincode</TableCell>
                   <TableCell>Country</TableCell>
                   <TableCell>Upload Status</TableCell>
                   <TableCell>Extract Status</TableCell>
-                  <TableCell>Extracted Info</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {records.map((record) => (
+                {filteredRecords.map((record) => (
                   <TableRow key={record.id} hover>
-                    <TableCell>{new Date(record.upload_timestamp).toLocaleString()}</TableCell>
-                    <TableCell>{record.tracking_id || 'N/A'}</TableCell>
-                    <TableCell>{record.address || 'N/A'}</TableCell>
-                    <TableCell>{record.name || 'N/A'}</TableCell>
-                    <TableCell>{record.city || 'N/A'}</TableCell>
-                    <TableCell>{record.pincode || 'N/A'}</TableCell>
-                    <TableCell>{record.country || 'N/A'}</TableCell>
-                    <TableCell>{record.upload_status}</TableCell>
-                    <TableCell>{record.extract_status}</TableCell>
-                    <TableCell>
-                      {record.extracted_info ? (
-                        <Box sx={{ maxHeight: 100, overflowY: 'auto' }}>
-                           <JsonToTable json={record.extracted_info} />
-                        </Box>
-                      ) : (
-                        'N/A'
-                      )}
-                    </TableCell>
+                    <TableCell>{highlightMatch(new Date(record.upload_timestamp).toLocaleString())}</TableCell>
+                    <TableCell>{highlightMatch(record.tracking_id || 'N/A')}</TableCell>
+                    <TableCell>{highlightMatch(record.name || 'N/A')}</TableCell>
+                    <TableCell>{highlightMatch(record.city || 'N/A')}</TableCell>
+                    <TableCell>{highlightMatch(record.pincode || 'N/A')}</TableCell>
+                    <TableCell>{highlightMatch(record.country || 'N/A')}</TableCell>
+                    <TableCell>{highlightMatch(record.upload_status.charAt(0).toUpperCase() + record.upload_status.slice(1))}</TableCell>
+                    <TableCell>{highlightMatch(record.extract_status.charAt(0).toUpperCase() + record.extract_status.slice(1))}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -232,7 +208,7 @@ const DashboardPage = () => {
           </TableContainer>
         )}
 
-        {!loading && totalRecords > pageSize && (
+        {!loading && filteredRecords.length > pageSize && (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
             <Pagination
               count={Math.ceil(totalRecords / pageSize)}
@@ -257,4 +233,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage; 
+export default DashboardPage;

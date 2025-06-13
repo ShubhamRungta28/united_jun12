@@ -1,35 +1,34 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
-import LoginPage from './components/LoginPage';
-import UploadPage from './components/UploadPage';
-import DashboardPage from './components/DashboardPage';
-import AnalyticsPage from './components/AnalyticsPage';
-import ProtectedRoute from './components/ProtectedRoute';
-import { CssBaseline, AppBar, Toolbar, Typography, Button, Box, Container, Stack, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import {
+  CssBaseline, AppBar, Toolbar, Typography, Button, Box, Container, Stack,
+  IconButton, Menu, MenuItem, ListItemIcon, ListItemText
+} from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
-import SettingsIcon from '@mui/icons-material/Settings';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import PersonIcon from '@mui/icons-material/Person';
-import { AuthProvider, useAuth } from './auth/AuthContext';
-import theme from './theme';
-import { useNavigate } from 'react-router-dom';
+
+import LoginPage from './components/LoginPage';
+import UploadPage from './components/UploadPage';
+import DashboardPage from './components/DashboardPage';
+import AnalyticsPage from './components/AnalyticsPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import RegisterPage from './components/RegisterPage';
 import ConfirmationPage from './components/ConfirmationPage';
-import ProfilePage from './components/ProfilePage';
+import { AuthProvider, useAuth } from './auth/AuthContext';
+import theme from './theme';
 
 function App() {
   const { isAuthenticated, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [anchorEl, setAnchorEl] = useState(null); // State for the menu anchor
+  const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
 
-  // Define paths where the AppBar should not be shown
   const noAppBarPaths = ['/login', '/register', '/confirmation'];
   const shouldShowAppBar = !noAppBarPaths.includes(location.pathname);
 
@@ -58,49 +57,54 @@ function App() {
         <CssBaseline />
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           {shouldShowAppBar && (
-          <AppBar position="static" elevation={0} sx={{ bgcolor: 'primary.main' }}>
-            <Container maxWidth="lg">
-              <Toolbar sx={{ px: { xs: 0 } }}>
+            <AppBar position="static" elevation={0} sx={{ bgcolor: 'primary.main' }}>
+              <Container maxWidth="lg">
+                <Toolbar sx={{ px: { xs: 0 } }}>
                   {isAuthenticated && (
                     <IconButton
                       color="inherit"
                       aria-label="open drawer"
                       edge="start"
-                      onClick={handleMenuClick} // Open menu on click
+                      onClick={handleMenuClick}
                       sx={{ mr: 2 }}
                     >
                       <MenuIcon />
                     </IconButton>
                   )}
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
-                    flexGrow: 1, 
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
-                    onClick={() => navigate(isAuthenticated ? '/upload' : '/login')} // Changed to /upload after login
-                >
-                  PARS
-                </Typography>
-                {isAuthenticated && (
-                  <Stack direction="row" spacing={2} sx={{ mr: 2 }}>
-                      {/* These items are now in the dropdown menu */}
-                  </Stack>
-                )}
-                {isAuthenticated && (
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      flexGrow: 1,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      userSelect: 'none',
+                      display: 'inline-block',
+                      whiteSpace: 'nowrap',
+                    }}
+                    onClick={() => navigate(isAuthenticated ? '/upload' : '/login')}
+                  >
+                    <Box component="span" sx={{ fontWeight: 'bold', fontSize: '1.1em' }}>P</Box>ackage&nbsp;
+                    <Box component="span" sx={{ fontWeight: 'bold', fontSize: '1.1em' }}>A</Box>nalysis &&nbsp;
+                    <Box component="span" sx={{ fontWeight: 'bold', fontSize: '1.1em' }}>R</Box>erouting&nbsp;
+                    <Box component="span" sx={{ fontWeight: 'bold', fontSize: '1.1em' }}>S</Box>ystem
+                  </Typography>
+                  {isAuthenticated && (
                     <IconButton
-                    color="inherit" 
-                      onClick={() => navigate('/profile')}
-                      sx={{ ml: 2 }} // Margin left for spacing from logout button if it exists
+                      color="inherit"
+                      onClick={() => {
+                        logout();
+                        navigate('/login');
+                      }}
+                      sx={{ ml: 2 }}
                     >
-                      <AccountCircle />
+                      <ExitToAppIcon />
                     </IconButton>
-                )}
-              </Toolbar>
-            </Container>
-          </AppBar>
+                  )}
+                </Toolbar>
+              </Container>
+            </AppBar>
           )}
+
           {isAuthenticated && (
             <Menu
               anchorEl={anchorEl}
@@ -112,27 +116,10 @@ function App() {
             >
               {navItems.map((item) => (
                 <MenuItem key={item.label} onClick={() => handleMenuItemClick(item.path)}>
-                  <ListItemIcon>
-                    {item.icon}
-                  </ListItemIcon>
+                  <ListItemIcon>{item.icon}</ListItemIcon>
                   <ListItemText>{item.label}</ListItemText>
                 </MenuItem>
               ))}
-              <MenuItem onClick={() => handleMenuItemClick('/profile')}>
-                <ListItemIcon>
-                  <PersonIcon />
-                </ListItemIcon>
-                <ListItemText>Profile</ListItemText>
-              </MenuItem>
-              <MenuItem onClick={() => {
-                alert('Settings page not implemented yet.');
-                handleMenuClose();
-              }}>
-                <ListItemIcon>
-                  <SettingsIcon />
-                </ListItemIcon>
-                <ListItemText>Settings</ListItemText>
-              </MenuItem>
               <MenuItem onClick={() => {
                 logout();
                 navigate('/login');
@@ -145,39 +132,16 @@ function App() {
               </MenuItem>
             </Menu>
           )}
-          <Box 
-            component="main" 
-            sx={{ 
-              flexGrow: 1,
-              bgcolor: 'background.default',
-              py: 4
-            }}
-          >
+
+          <Box component="main" sx={{ flexGrow: 1, bgcolor: 'background.default', py: 4 }}>
             <Container maxWidth="lg">
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/confirmation" element={<ConfirmationPage />} />
-                <Route path="/profile" element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/upload" element={
-                  <ProtectedRoute>
-                    <UploadPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <DashboardPage />
-                  </ProtectedRoute>
-                } />
-                <Route path="/analytics" element={
-                  <ProtectedRoute>
-                    <AnalyticsPage />
-                  </ProtectedRoute>
-                } />
+                <Route path="/upload" element={<ProtectedRoute><UploadPage /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
                 <Route path="*" element={<Navigate to={isAuthenticated ? "/upload" : "/login"} />} />
               </Routes>
             </Container>
@@ -188,4 +152,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
